@@ -13,7 +13,7 @@ app.use('/auth', authRoutes);
 
 const initilize = async () => {
   try {
-    const CONNECTION_STRING: any = process.env.CONNECTION_STRING;
+    const CONNECTION_STRING = process.env.CONNECTION_STRING!;
     await mongoose.connect(CONNECTION_STRING);
     app.listen(process.env.SERVER_PORT);
   } catch (error) {

@@ -60,13 +60,3 @@ const categorySchema = new Schema({
 });
 
 export const Category = mongoose.model('Category', categorySchema);
-// ? Mobile
-// const mobileSchema = new Schema({
-//   productId: { type: Types.ObjectId, required: true, ref: 'Product' },
-//   OS: { type: String, required: true },
-//   Chipset: { type: String, required: true },
-//   CPU: { type: String, required: true },
-//   GPU: { type: String, required: true },
-// });
-
-// export const Mobile = mongoose.model('Mobile', mobileSchema);
