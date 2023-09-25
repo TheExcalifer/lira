@@ -2,7 +2,6 @@ import { RequestHandler } from 'express';
 import Joi from 'joi';
 import { escapeHtml } from '@hapi/hoek';
 import JWT from 'jsonwebtoken';
-// import { escapeHtml } from '@hapi/hoek';
 import bcrypt from 'bcrypt';
 import { User } from '../models/models.js';
 

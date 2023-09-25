@@ -11,8 +11,8 @@ app.use(express.json());
 import liraRoutes from './routes/lira.js';
 app.use('/', liraRoutes);
 
-// import adminAuthRoutes from './routes/admin.js';
-// app.use('/admin', adminAuthRoutes);
+import adminRoutes from './routes/admin.js';
+app.use('/admin', adminRoutes);
 
 const initilize = async () => {
   try {
