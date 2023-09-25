@@ -8,8 +8,11 @@ dotenv.config({ path: '../.env' });
 
 app.use(express.json());
 
-import authRoutes from './routes/auth/user-auth.js';
-app.use('/auth', authRoutes);
+import liraRoutes from './routes/lira.js';
+app.use('/', liraRoutes);
+
+// import adminAuthRoutes from './routes/admin.js';
+// app.use('/admin', adminAuthRoutes);
 
 const initilize = async () => {
   try {

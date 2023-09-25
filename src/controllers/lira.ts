@@ -1,9 +1,10 @@
 import { RequestHandler } from 'express';
 import Joi from 'joi';
 import { escapeHtml } from '@hapi/hoek';
-import bcrypt from 'bcrypt';
-import { User } from '../../models/models.js';
 import JWT from 'jsonwebtoken';
+// import { escapeHtml } from '@hapi/hoek';
+import bcrypt from 'bcrypt';
+import { User } from '../models/models.js';
 
 export const login: RequestHandler = async (req, res) => {
   try {
