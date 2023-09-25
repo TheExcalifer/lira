@@ -23,7 +23,6 @@ const productSchema = new Schema({
     GPU: { type: String, required: true },
   },
 });
-
 export const Product = mongoose.model('Product', productSchema);
 
 // ? User
@@ -33,8 +32,15 @@ const userSchema = new Schema({
   password: { type: String, required: true },
   cartId: [{ type: Types.ObjectId, required: true, ref: 'Cart' }],
 });
-
 export const User = mongoose.model('User', userSchema);
+
+// ? Admin
+const adminSchema = new Schema({
+  name: { type: String, required: true },
+  email: { type: String, required: true, unique: true },
+  password: { type: String, required: true },
+});
+export const Admin = mongoose.model('Admin', adminSchema);
 
 // ? Cart
 const cartSchema = new Schema({
@@ -42,7 +48,6 @@ const cartSchema = new Schema({
   entityId: { type: Types.ObjectId, required: true, ref: 'Entity' },
   productId: { type: Types.ObjectId, required: true, ref: 'Product' },
 });
-
 export const Cart = mongoose.model('Cart', cartSchema);
 
 // ? Entity
@@ -51,12 +56,10 @@ const entitySchema = new Schema({
   stock: { type: Number, required: true },
   price: { type: Types.Decimal128, required: true },
 });
-
 export const Entity = mongoose.model('Entity', entitySchema);
 
 // ? Category
 const categorySchema = new Schema({
   name: { type: String, required: true },
 });
-
 export const Category = mongoose.model('Category', categorySchema);
