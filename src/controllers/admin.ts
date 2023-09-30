@@ -36,7 +36,7 @@ export const login: RequestHandler = async (req, res) => {
       _id: adminExist._id,
       email: adminExist.email,
     };
-    const SECRET_KEY = process.env.SECRET_JWT_KEY!;
+    const SECRET_KEY = process.env.ADMIN_SECRET_JWT_KEY!;
     const OPTIONS = { expiresIn: process.env.EXPIRE_JWT };
     const token = JWT.sign(PAYLOAD, SECRET_KEY, OPTIONS);
 
