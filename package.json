@@ -5,6 +5,7 @@
   "main": "app.js",
   "type": "module",
   "scripts": {
+    "build": "npx swc ./src -d dist; node ./dist/app.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Behnam",
