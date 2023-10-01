@@ -60,6 +60,6 @@ export const Entity = mongoose.model('Entity', entitySchema);
 
 // ? Category
 const categorySchema = new Schema({
-  name: { type: String, required: true },
+  name: { type: String, required: true, unique: true },
 });
 export const Category = mongoose.model('Category', categorySchema);

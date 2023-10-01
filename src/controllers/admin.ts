@@ -2,7 +2,7 @@ import { RequestHandler } from 'express';
 import Joi from 'joi';
 import JWT from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
-import { Admin } from '../models/models.js';
+import { Admin, Category } from '../models/models.js';
 export const login: RequestHandler = async (req, res) => {
   try {
     // ? Validation
@@ -81,6 +81,33 @@ export const changePassword: RequestHandler = async (req, res) => {
     await Admin.updateOne({ _id: req.admin._id }, { $set: { password: encryptedPassword } });
 
     res.status(200).json();
+  } catch (error) {
+    res.status(500).json();
+  }
+};
+export const createCategory: RequestHandler = async (req, res) => {
+  try {
+    const { categoryName } = req.body;
+
+    // ? Validation
+    const validationSchema = Joi.object().keys({
+      categoryName: Joi.string().required().trim().min(3).max(64),
+    });
+    const { value: validatedBody, error: validationError } = validationSchema.validate({
+      categoryName,
+    });
+
+    // ? Validation Error
+    if (validationError) return res.status(400).json(validationError);
+
+    // ? Create Category
+    try {
+      await Category.create({ name: validatedBody.categoryName });
+    } catch (error: any) {
+      if (error.code === 11000) return res.status(400).json({ error: 'Category exist!' });
+    }
+
+    res.status(201).json();
   } catch (error) {
     res.status(500).json();
   }
