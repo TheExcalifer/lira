@@ -4,7 +4,7 @@ import mongoose from 'mongoose';
 
 const app = express();
 
-dotenv.config({ path: '../.env' });
+dotenv.config();
 
 app.use(express.json());
 
@@ -18,6 +18,7 @@ const initilize = async () => {
   try {
     const CONNECTION_STRING = process.env.CONNECTION_STRING!;
     await mongoose.connect(CONNECTION_STRING);
+    console.log('connected');
     app.listen(process.env.SERVER_PORT);
   } catch (error) {
     console.error('Connection string is incorrect');
