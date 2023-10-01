@@ -15,7 +15,7 @@ const productSchema = new Schema({
       comment: { type: String, required: true },
     },
   ],
-  entityId: [{ type: Types.ObjectId, ref: 'Entity' }],
+  entityList: [{ type: Types.ObjectId, ref: 'Entity' }],
   specification: {
     OS: { type: String, required: true },
     Chipset: { type: String, required: true },

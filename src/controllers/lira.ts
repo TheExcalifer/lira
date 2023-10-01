@@ -3,7 +3,7 @@ import Joi from 'joi';
 import { escapeHtml } from '@hapi/hoek';
 import JWT from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
-import { User } from '../models/models.js';
+import { User, Product, Entity } from '../models/models.js';
 
 export const login: RequestHandler = async (req, res) => {
   try {
@@ -86,6 +86,21 @@ export const signup: RequestHandler = async (req, res) => {
     });
 
     res.status(201).json(createdUser);
+  } catch (error) {
+    res.status(500).send();
+  }
+};
+export const getProduct: RequestHandler = async (req, res) => {
+  try {
+    const { slug } = req.params;
+    
+    // ? Find Product
+    const product = await Product.findOne({ slug }).populate('entityList').lean();
+
+    // ? Product Not Found
+    if (!product) return res.status(404).json();
+
+    res.status(200).json(product);
   } catch (error) {
     res.status(500).send();
   }
