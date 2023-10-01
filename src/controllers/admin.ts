@@ -91,7 +91,7 @@ export const createCategory: RequestHandler = async (req, res) => {
 
     // ? Validation
     const validationSchema = Joi.object().keys({
-      categoryName: Joi.string().required().trim().min(3).max(64),
+      categoryName: Joi.string().required().trim().min(3).max(64).lowercase(),
     });
     const { value: validatedBody, error: validationError } = validationSchema.validate({
       categoryName,

@@ -117,3 +117,63 @@ export const getCategories: RequestHandler = async (req: Request, res: Response)
     res.status(500).send();
   }
 };
+export const getProductsByFilter: RequestHandler = async (req: Request, res: Response) => {
+  try {
+    const ITEM_PER_PAGE = 12;
+
+    // ? Validation
+    const validationSchema = Joi.object().keys({
+      page: Joi.number().required(),
+      categoryName: Joi.string(),
+      minPrice: Joi.number().required(),
+      maxPrice: Joi.number().required(),
+      sortByPriceAsc: Joi.boolean(),
+    });
+    const { value: validatedBody, error: validationError } = validationSchema.validate({
+      ...req.body,
+    });
+
+    // ? Validation Error
+    if (validationError) return res.status(400).json(validationError);
+
+    const aggregateStages: any = [];
+
+    // ? pushing aggregation steps to array in order
+    if (validatedBody.categoryName) {
+      aggregateStages.push({ $match: { category: validatedBody.categoryName } });
+    }
+    aggregateStages.push({
+      $match: { 'entityList.price': { $gte: validatedBody.minPrice, $lte: validatedBody.maxPrice } },
+    });
+    switch (validatedBody.sortByPriceAsc) {
+      case true:
+        aggregateStages.push({ $sort: { 'entityList.price': 1 } });
+        break;
+      case false:
+        aggregateStages.push({ $sort: { 'entityList.price': -1 } });
+        break;
+    }
+
+    // ? Run aggregation
+    const products = await Product.aggregate([
+      {
+        $lookup: {
+          from: 'entities',
+          localField: 'entityList',
+          foreignField: '_id',
+          as: 'entityList',
+        },
+      },
+      ...aggregateStages,
+      { $skip: ITEM_PER_PAGE * (validatedBody.page - 1) },
+      { $limit: ITEM_PER_PAGE },
+    ]);
+
+    // ? Product Not Found
+    if (!products) return res.status(404).json();
+
+    res.status(200).json(products);
+  } catch (error) {
+    res.status(500).send();
+  }
+};
