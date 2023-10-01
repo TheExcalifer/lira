@@ -1,11 +1,11 @@
-import { RequestHandler } from 'express';
+import { RequestHandler, Request, Response } from 'express';
 import Joi from 'joi';
 import { escapeHtml } from '@hapi/hoek';
 import JWT from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
-import { User, Product, Entity } from '../models/models.js';
+import { User, Product, Entity, Category } from '../models/models.js';
 
-export const login: RequestHandler = async (req, res) => {
+export const login: RequestHandler = async (req: Request, res: Response) => {
   try {
     // ? Validation
     const validationSchema = Joi.object().keys({
@@ -47,7 +47,7 @@ export const login: RequestHandler = async (req, res) => {
     res.status(500).json();
   }
 };
-export const signup: RequestHandler = async (req, res) => {
+export const signup: RequestHandler = async (req: Request, res: Response) => {
   try {
     // ? Validation
     const validationSchema = Joi.object().keys({
@@ -90,10 +90,10 @@ export const signup: RequestHandler = async (req, res) => {
     res.status(500).send();
   }
 };
-export const getProduct: RequestHandler = async (req, res) => {
+export const getProduct: RequestHandler = async (req: Request, res: Response) => {
   try {
     const { slug } = req.params;
-    
+
     // ? Find Product
     const product = await Product.findOne({ slug }).populate('entityList').lean();
 
@@ -101,6 +101,18 @@ export const getProduct: RequestHandler = async (req, res) => {
     if (!product) return res.status(404).json();
 
     res.status(200).json(product);
+  } catch (error) {
+    res.status(500).send();
+  }
+};
+export const getCategories: RequestHandler = async (req: Request, res: Response) => {
+  try {
+    const categories = await Category.find();
+
+    // ? Category Not Found
+    if (!categories) return res.status(404).json();
+
+    res.status(200).json(categories);
   } catch (error) {
     res.status(500).send();
   }
