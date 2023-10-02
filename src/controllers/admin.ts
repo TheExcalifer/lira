@@ -2,6 +2,7 @@ import { RequestHandler } from 'express';
 import Joi from 'joi';
 import JWT from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
+import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 import { Admin, Category } from '../models/models.js';
 export const login: RequestHandler = async (req, res) => {
   try {
@@ -108,6 +109,32 @@ export const createCategory: RequestHandler = async (req, res) => {
     }
 
     res.status(201).json();
+  } catch (error) {
+    res.status(500).json();
+  }
+};
+export const CreateProduct: RequestHandler = async (req, res) => {
+  const s3 = new S3Client({
+    region: 'default',
+    endpoint: 'https://s3.ir-thr-at1.arvanstorage.ir/',
+    credentials: {
+      accessKeyId: process.env.ARVAN_ACCESS_KEY_ID!,
+      secretAccessKey: process.env.ARVAN_SECRET_ACCESS_KEY!,
+    },
+  });
+  try {
+    // console.log(req.body);
+    console.log(req.file);
+    const uploadParams = {
+      Bucket: 'lira', // bucket name
+      Key: '1.png', // the name of the selected file
+      ACL: 'public-read', // 'private' | 'public-read'
+      Body: req.file?.buffer,
+    };
+
+    const data = await s3.send(new PutObjectCommand(uploadParams));
+
+    res.status(200).json(data);
   } catch (error) {
     res.status(500).json();
   }
