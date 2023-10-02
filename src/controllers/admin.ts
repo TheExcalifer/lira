@@ -2,8 +2,11 @@ import { RequestHandler } from 'express';
 import Joi from 'joi';
 import JWT from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
-import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
-import { Admin, Category } from '../models/models.js';
+import { escapeHtml } from '@hapi/hoek';
+import { PutObjectCommand } from '@aws-sdk/client-s3';
+import { arvanS3 } from '../util/arvan-s3.js';
+import { Admin, Category, Product } from '../models/models.js';
+import { randomNameGenerator } from '../util/name-generator.js';
 export const login: RequestHandler = async (req, res) => {
   try {
     // ? Validation
@@ -114,27 +117,133 @@ export const createCategory: RequestHandler = async (req, res) => {
   }
 };
 export const CreateProduct: RequestHandler = async (req, res) => {
-  const s3 = new S3Client({
-    region: 'default',
-    endpoint: 'https://s3.ir-thr-at1.arvanstorage.ir/',
-    credentials: {
-      accessKeyId: process.env.ARVAN_ACCESS_KEY_ID!,
-      secretAccessKey: process.env.ARVAN_SECRET_ACCESS_KEY!,
-    },
-  });
   try {
-    // console.log(req.body);
-    console.log(req.file);
+    const { slug, category, title, OS, Chipset, CPU, GPU } = req.body;
+    // ? Handling Insert Product Information
+    // ? Validation
+    const validationSchema = Joi.object().keys({
+      slug: Joi.string()
+        .required()
+        .trim()
+        .min(3)
+        .max(128)
+        .lowercase()
+        .custom(value => escapeHtml(value))
+        .pattern(new RegExp('^[a-z0-9]+(?:-[a-z0-9]+)*$'))
+        .message('just a-z, 0-9,- character allow. '),
+      category: Joi.string()
+        .required()
+        .trim()
+        .min(3)
+        .max(64)
+        .lowercase()
+        .custom(value => escapeHtml(value)),
+      title: Joi.string()
+        .required()
+        .trim()
+        .min(3)
+        .max(64)
+        .custom(value => escapeHtml(value)),
+      OS: Joi.string()
+        .required()
+        .trim()
+        .min(3)
+        .max(64)
+        .custom(value => escapeHtml(value)),
+      Chipset: Joi.string()
+        .required()
+        .trim()
+        .min(3)
+        .max(64)
+        .custom(value => escapeHtml(value)),
+      CPU: Joi.string()
+        .required()
+        .trim()
+        .min(3)
+        .max(64)
+        .custom(value => escapeHtml(value)),
+      GPU: Joi.string()
+        .required()
+        .trim()
+        .min(3)
+        .max(64)
+        .custom(value => escapeHtml(value)),
+    });
+    const { value: validatedBody, error: validationError } = validationSchema.validate({
+      slug,
+      category,
+      title,
+      OS,
+      Chipset,
+      CPU,
+      GPU,
+    });
+
+    // ? Validation Error
+    if (validationError) return res.status(400).json(validationError);
+
+    // ? Category doesn't exist error
+    const existCategory = await Category.find({ name: validatedBody.category });
+    if (existCategory.length == 0) return res.status(404).json({ error: 'Category does not exist' });
+
+    // ? Handling Product Image Upload
+
+    // ? Save images name in this const and use it in create operation
+    const productImageNames: any = [];
+    const productImages: any = req.files;
+
+    // ? Error Handling
+    if (productImages.length === 0) return res.status(400).json({ error: 'Send at least 1 image' });
+    if (productImages.length > 3) return res.status(400).json({ error: 'Send maximum 3 images' });
+
+    //? S3 Options
     const uploadParams = {
-      Bucket: 'lira', // bucket name
-      Key: '1.png', // the name of the selected file
+      Bucket: process.env.BUCKET_NAME, // bucket name
+      Key: '', // the name of the selected file
       ACL: 'public-read', // 'private' | 'public-read'
-      Body: req.file?.buffer,
+      Body: productImages[0].buffer,
     };
 
-    const data = await s3.send(new PutObjectCommand(uploadParams));
+    // ? Upload multiple files
+    for (const productImage of productImages) {
+      const productSizeInMB = productImage.size / 1024 / 1024;
 
-    res.status(200).json(data);
+      if (productSizeInMB > 0.2) {
+        res.status(400).json({ error: 'Maximum file size is 200kb' });
+        break;
+      }
+
+      const imageExtension = productImage.originalname.split('.').at(-1);
+
+      uploadParams.Key = randomNameGenerator(imageExtension);
+      productImageNames.push(process.env.BUCKET_ADDRESS + uploadParams.Key);
+      uploadParams.Body = productImage.buffer;
+
+      try {
+        const data = await arvanS3.send(new PutObjectCommand(uploadParams));
+      } catch (err) {
+        throw new Error();
+      }
+    }
+
+    // ? Insert Product Information
+    try {
+      const product = await Product.create({
+        slug: validatedBody.slug,
+        category: validatedBody.category,
+        title: validatedBody.title,
+        specification: {
+          OS: validatedBody.OS,
+          Chipset: validatedBody.Chipset,
+          CPU: validatedBody.CPU,
+          GPU: validatedBody.GPU,
+        },
+        images: productImageNames,
+      });
+      res.status(201).json(product);
+    } catch (error: any) {
+      if (error.code === 11000) return res.status(400).json({ error: 'Duplicate slug' });
+    }
   } catch (error) {
     res.status(500).json();
   }

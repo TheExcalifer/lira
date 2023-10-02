@@ -9,6 +9,6 @@ import { login, changePassword, createCategory, CreateProduct } from '../control
 router.post('/auth/login', login);
 router.patch('/change-password', isAdminAuth, changePassword);
 router.post('/create-category', isAdminAuth, createCategory);
-router.post('/create-product', isAdminAuth, upload.single('data'), CreateProduct);
+router.post('/create-product', isAdminAuth, upload.array('productImages'), CreateProduct);
 
 export default router;
