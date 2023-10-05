@@ -8,6 +8,7 @@ import { arvanS3 } from '../util/arvan-s3.js';
 import { Admin, Category, Entity, Product } from '../models/models.js';
 import mongoose from 'mongoose';
 import { randomNameGenerator } from '../util/name-generator.js';
+
 export const login: RequestHandler = async (req, res) => {
   try {
     // ? Validation
@@ -23,9 +24,7 @@ export const login: RequestHandler = async (req, res) => {
     if (validationError) return res.status(400).json(validationError);
 
     // ? Try to find user
-    const adminExist = await Admin.findOne({
-      email: validatedBody.email,
-    });
+    const adminExist = await Admin.findOne().where('email').equals(validatedBody.email);
 
     // ? User Not Found Error
     if (!adminExist) return res.status(404).json({ error: 'Username or password is incorrect.' });
@@ -45,7 +44,7 @@ export const login: RequestHandler = async (req, res) => {
     const OPTIONS = { expiresIn: process.env.EXPIRE_JWT };
     const token = JWT.sign(PAYLOAD, SECRET_KEY, OPTIONS);
 
-    return res.status(200).json({ token: token });
+    res.status(200).json({ token: token });
   } catch (error) {
     res.status(500).json();
   }
@@ -83,7 +82,7 @@ export const changePassword: RequestHandler = async (req, res) => {
     const encryptedPassword = await bcrypt.hash(validatedBody.newPassword, 12);
 
     // ? Update Password
-    await Admin.updateOne({ _id: req.admin._id }, { $set: { password: encryptedPassword } });
+    await Admin.updateOne({}, { $set: { password: encryptedPassword } }).where('_id').equals(req.admin._id);
 
     res.status(200).json();
   } catch (error) {
@@ -163,7 +162,7 @@ export const createEntity: RequestHandler = async (req, res) => {
     res.status(500).json();
   }
 };
-export const CreateProduct: RequestHandler = async (req, res) => {
+export const createProduct: RequestHandler = async (req, res) => {
   try {
     const { slug, category, title, OS, Chipset, CPU, GPU } = req.body;
     // ? Handling Insert Product Information
@@ -230,8 +229,8 @@ export const CreateProduct: RequestHandler = async (req, res) => {
     if (validationError) return res.status(400).json(validationError);
 
     // ? Category doesn't exist error
-    const existCategory = await Category.find({ name: validatedBody.category });
-    if (existCategory.length == 0) return res.status(404).json({ error: 'Category does not exist' });
+    const existCategory = await Category.find().where('name').equals(validatedBody.category);
+    if (existCategory.length === 0) return res.status(404).json({ error: 'Category does not exist' });
 
     // ? Handling Product Image Upload
 
@@ -267,7 +266,7 @@ export const CreateProduct: RequestHandler = async (req, res) => {
       uploadParams.Body = productImage.buffer;
 
       try {
-        const data = await arvanS3.send(new PutObjectCommand(uploadParams));
+        await arvanS3.send(new PutObjectCommand(uploadParams));
       } catch (err) {
         throw new Error();
       }

@@ -1,11 +1,11 @@
-import { RequestHandler, Request, Response } from 'express';
+import { RequestHandler } from 'express';
 import Joi from 'joi';
 import { escapeHtml } from '@hapi/hoek';
 import JWT from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
-import { User, Product, Entity, Category } from '../models/models.js';
+import { User, Product, Category } from '../models/models.js';
 
-export const login: RequestHandler = async (req: Request, res: Response) => {
+export const login: RequestHandler = async (req, res) => {
   try {
     // ? Validation
     const validationSchema = Joi.object().keys({
@@ -20,9 +20,7 @@ export const login: RequestHandler = async (req: Request, res: Response) => {
     if (validationError) return res.status(400).json(validationError);
 
     // ? Try to find user
-    const userExist = await User.findOne({
-      email: validatedBody.email,
-    });
+    const userExist = await User.findOne().where('email').equals(validatedBody.email);
 
     // ? User Not Found Error
     if (!userExist) return res.status(404).json({ error: 'Username or password is incorrect.' });
@@ -42,12 +40,12 @@ export const login: RequestHandler = async (req: Request, res: Response) => {
     const OPTIONS = { expiresIn: process.env.EXPIRE_JWT };
     const token = JWT.sign(PAYLOAD, SECRET_KEY, OPTIONS);
 
-    return res.status(200).json({ token: token });
+    res.status(200).json({ token: token });
   } catch (error) {
     res.status(500).json();
   }
 };
-export const signup: RequestHandler = async (req: Request, res: Response) => {
+export const signup: RequestHandler = async (req, res) => {
   try {
     // ? Validation
     const validationSchema = Joi.object().keys({
@@ -68,9 +66,7 @@ export const signup: RequestHandler = async (req: Request, res: Response) => {
     if (validationError) return res.status(400).json(validationError);
 
     // ? Duplicate User Error
-    const userExist = await User.findOne({
-      email: validatedBody.email,
-    });
+    const userExist = await User.findOne().where('email').equals(validatedBody.email);
     if (userExist)
       return res.status(400).json({
         error: 'Email already exists. Please choose a different email.',
@@ -82,7 +78,7 @@ export const signup: RequestHandler = async (req: Request, res: Response) => {
     // ? Create User
     const createdUser = await User.create({
       ...validatedBody,
-      password: encryptedPassword,
+      password: encryptedPassword, // overwrite
     });
 
     res.status(201).json(createdUser);
@@ -90,12 +86,12 @@ export const signup: RequestHandler = async (req: Request, res: Response) => {
     res.status(500).send();
   }
 };
-export const getProduct: RequestHandler = async (req: Request, res: Response) => {
+export const getProduct: RequestHandler = async (req, res) => {
   try {
     const { slug } = req.params;
 
     // ? Find Product
-    const product = await Product.findOne({ slug }).populate('entityList').lean();
+    const product = await Product.findOne().where('slug').equals(slug).populate('entityList').lean();
 
     // ? Product Not Found
     if (!product) return res.status(404).json();
@@ -105,20 +101,21 @@ export const getProduct: RequestHandler = async (req: Request, res: Response) =>
     res.status(500).send();
   }
 };
-export const getCategories: RequestHandler = async (req: Request, res: Response) => {
+export const getCategories: RequestHandler = async (req, res) => {
   try {
     const categories = await Category.find();
 
     // ? Category Not Found
-    if (!categories) return res.status(404).json();
+    if (categories.length === 0) return res.status(404).json();
 
     res.status(200).json(categories);
   } catch (error) {
     res.status(500).send();
   }
 };
-export const getProductsByFilter: RequestHandler = async (req: Request, res: Response) => {
+export const getProductsByFilter: RequestHandler = async (req, res) => {
   try {
+    // ? Return 12 item per page
     const ITEM_PER_PAGE = 12;
 
     // ? Validation
@@ -136,41 +133,25 @@ export const getProductsByFilter: RequestHandler = async (req: Request, res: Res
     // ? Validation Error
     if (validationError) return res.status(400).json(validationError);
 
-    const aggregateStages: any = [];
+    let productAggregation = Product.aggregate()
+      .lookup({ from: 'entities', localField: 'entityList', foreignField: '_id', as: 'entityList' })
+      .match({ 'entityList.price': { $gte: validatedBody.minPrice, $lte: validatedBody.maxPrice } });
 
-    // ? pushing aggregation steps to array in order
     if (validatedBody.categoryName) {
-      aggregateStages.push({ $match: { category: validatedBody.categoryName } });
+      productAggregation.match({ category: validatedBody.categoryName });
     }
-    aggregateStages.push({
-      $match: { 'entityList.price': { $gte: validatedBody.minPrice, $lte: validatedBody.maxPrice } },
-    });
-    switch (validatedBody.sortByPriceAsc) {
-      case true:
-        aggregateStages.push({ $sort: { 'entityList.price': 1 } });
-        break;
-      case false:
-        aggregateStages.push({ $sort: { 'entityList.price': -1 } });
-        break;
+    if (validatedBody.sortByPriceAsc) {
+      productAggregation.sort({ field: 'asc', entityList: -1 });
+    } else if (validatedBody.sortByPriceAsc === false) {
+      productAggregation.sort({ field: 'desc', entityList: 1 });
     }
 
-    // ? Run aggregation
-    const products = await Product.aggregate([
-      {
-        $lookup: {
-          from: 'entities',
-          localField: 'entityList',
-          foreignField: '_id',
-          as: 'entityList',
-        },
-      },
-      ...aggregateStages,
-      { $skip: ITEM_PER_PAGE * (validatedBody.page - 1) },
-      { $limit: ITEM_PER_PAGE },
-    ]);
+    productAggregation.skip(ITEM_PER_PAGE * (validatedBody.page - 1)).limit(ITEM_PER_PAGE);
+
+    const products = await productAggregation.exec();
 
     // ? Product Not Found
-    if (!products) return res.status(404).json();
+    if (products.length === 0) return res.status(404).json();
 
     res.status(200).json(products);
   } catch (error) {
