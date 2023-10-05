@@ -5,7 +5,8 @@ import bcrypt from 'bcrypt';
 import { escapeHtml } from '@hapi/hoek';
 import { PutObjectCommand } from '@aws-sdk/client-s3';
 import { arvanS3 } from '../util/arvan-s3.js';
-import { Admin, Category, Product } from '../models/models.js';
+import { Admin, Category, Entity, Product } from '../models/models.js';
+import mongoose from 'mongoose';
 import { randomNameGenerator } from '../util/name-generator.js';
 export const login: RequestHandler = async (req, res) => {
   try {
@@ -112,6 +113,52 @@ export const createCategory: RequestHandler = async (req, res) => {
     }
 
     res.status(201).json();
+  } catch (error) {
+    res.status(500).json();
+  }
+};
+export const createEntity: RequestHandler = async (req, res) => {
+  try {
+    // ? Validation
+    const validationSchema = Joi.object().keys({
+      productId: Joi.string().required().trim(),
+      color: Joi.string().min(3).max(32).required().trim(),
+      stock: Joi.number().required(),
+      price: Joi.number().required(),
+    });
+    const { value: validatedBody, error: validationError } = validationSchema.validate({
+      ...req.body,
+    });
+
+    // ? Validation Error
+    if (validationError) return res.status(400).json(validationError);
+
+    const session = await mongoose.startSession();
+    session.startTransaction();
+    try {
+      const entity = await Entity.create(
+        [{ color: validatedBody.color, price: validatedBody.price, stock: validatedBody.stock }],
+        {
+          session,
+        }
+      );
+      const product = await Product.findOneAndUpdate({}, { $push: { entityList: entity } }, { session })
+        .where('_id')
+        .equals(validatedBody.productId);
+
+      // ? Product not found
+      if (!product) return res.status(404).json({ error: 'Product not found.' });
+
+      await session.commitTransaction();
+
+      res.status(201).json(entity);
+    } catch (error) {
+      await session.abortTransaction();
+
+      throw new Error();
+    } finally {
+      session.endSession();
+    }
   } catch (error) {
     res.status(500).json();
   }
