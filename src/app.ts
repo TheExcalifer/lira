@@ -14,6 +14,9 @@ app.use('/', liraRoutes);
 import adminRoutes from './routes/admin.js';
 app.use('/admin', adminRoutes);
 
+import userRoutes from './routes/user.js';
+app.use('/user', userRoutes);
+
 const initilize = async () => {
   try {
     const CONNECTION_STRING = process.env.CONNECTION_STRING!;
