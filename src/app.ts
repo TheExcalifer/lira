@@ -1,10 +1,10 @@
 import express from 'express';
 import dotenv from 'dotenv';
 import mongoose from 'mongoose';
-
+import { join } from 'path';
 const app = express();
 
-dotenv.config();
+dotenv.config({ path: join('../', '.env') });
 
 app.use(express.json());
 

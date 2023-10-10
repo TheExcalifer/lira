@@ -1,13 +1,18 @@
 import mongoose, { Schema, Types } from 'mongoose';
-
+export enum Field {
+  entityId = 'entityId',
+  userId = 'userId',
+  quantity = 'quantity',
+  stock = 'stock',
+}
 // ? Product
 const productSchema = new Schema({
   slug: { type: String, required: true, unique: true },
+  title: { type: String, required: true },
   category: {
     type: String,
     required: true,
   },
-  title: { type: String, required: true },
   images: [String],
   comment: [
     {
@@ -15,7 +20,6 @@ const productSchema = new Schema({
       comment: { type: String, required: true },
     },
   ],
-  entityList: [{ type: Types.ObjectId, ref: 'Entity' }],
   specification: {
     OS: { type: String, required: true },
     Chipset: { type: String, required: true },
@@ -25,12 +29,34 @@ const productSchema = new Schema({
 });
 export const Product = mongoose.model('Product', productSchema);
 
+// ? Entity
+const entitySchema = new Schema({
+  color: { type: String, required: true },
+  stock: { type: Number, required: true },
+  price: { type: Types.Decimal128, required: true },
+  productId: { type: Types.ObjectId, required: true, ref: 'Product' },
+});
+export const Entity = mongoose.model('Entity', entitySchema);
+
+// ? Category
+const categorySchema = new Schema({
+  name: { type: String, required: true, unique: true },
+});
+export const Category = mongoose.model('Category', categorySchema);
+
+// ? Cart
+const cartSchema = new Schema({
+  quantity: { type: Number, required: true },
+  entityId: { type: Types.ObjectId, required: true, ref: 'Entity' },
+  userId: { type: Types.ObjectId, required: true, ref: 'User' },
+});
+export const Cart = mongoose.model('Cart', cartSchema);
+
 // ? User
 const userSchema = new Schema({
   name: { type: String, required: true },
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
-  cartId: [{ type: Types.ObjectId, required: true, ref: 'Cart' }],
 });
 export const User = mongoose.model('User', userSchema);
 
@@ -41,25 +67,3 @@ const adminSchema = new Schema({
   password: { type: String, required: true },
 });
 export const Admin = mongoose.model('Admin', adminSchema);
-
-// ? Cart
-const cartSchema = new Schema({
-  quantity: { type: Number, required: true },
-  entityId: { type: Types.ObjectId, required: true, ref: 'Entity' },
-  productId: { type: Types.ObjectId, required: true, ref: 'Product' },
-});
-export const Cart = mongoose.model('Cart', cartSchema);
-
-// ? Entity
-const entitySchema = new Schema({
-  color: { type: String, required: true },
-  stock: { type: Number, required: true },
-  price: { type: Types.Decimal128, required: true },
-});
-export const Entity = mongoose.model('Entity', entitySchema);
-
-// ? Category
-const categorySchema = new Schema({
-  name: { type: String, required: true, unique: true },
-});
-export const Category = mongoose.model('Category', categorySchema);

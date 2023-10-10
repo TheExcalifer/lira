@@ -82,7 +82,9 @@ export const changePassword: RequestHandler = async (req, res) => {
     const encryptedPassword = await bcrypt.hash(validatedBody.newPassword, 12);
 
     // ? Update Password
-    await Admin.updateOne({}, { $set: { password: encryptedPassword } }).where('_id').equals(req.admin._id);
+    await Admin.updateOne({}, { $set: { password: encryptedPassword } })
+      .where('_id')
+      .equals(req.admin._id);
 
     res.status(200).json();
   } catch (error) {
@@ -132,32 +134,18 @@ export const createEntity: RequestHandler = async (req, res) => {
     // ? Validation Error
     if (validationError) return res.status(400).json(validationError);
 
-    const session = await mongoose.startSession();
-    session.startTransaction();
-    try {
-      const entity = await Entity.create(
-        [{ color: validatedBody.color, price: validatedBody.price, stock: validatedBody.stock }],
-        {
-          session,
-        }
-      );
-      const product = await Product.findOneAndUpdate({}, { $push: { entityList: entity } }, { session })
-        .where('_id')
-        .equals(validatedBody.productId);
+    // ? Product not found
+    const product = await Product.findById(validatedBody.productId);
+    if (!product) return res.status(404).json({ error: 'Product not found.' });
 
-      // ? Product not found
-      if (!product) return res.status(404).json({ error: 'Product not found.' });
+    const entity = await Entity.create({
+      color: validatedBody.color,
+      price: validatedBody.price,
+      stock: validatedBody.stock,
+      productId: validatedBody.productId,
+    });
 
-      await session.commitTransaction();
-
-      res.status(201).json(entity);
-    } catch (error) {
-      await session.abortTransaction();
-
-      throw new Error();
-    } finally {
-      session.endSession();
-    }
+    res.status(201).json(entity);
   } catch (error) {
     res.status(500).json();
   }
@@ -235,13 +223,13 @@ export const createProduct: RequestHandler = async (req, res) => {
     // ? Handling Product Image Upload
 
     // ? Save images name in this const and use it in create operation
-    const productImageNames: any = [];
+    const productImageNames: any[] = [];
     const productImages: any = req.files;
 
     // ? Error Handling
     if (productImages.length === 0) return res.status(400).json({ error: 'Send at least 1 image' });
     if (productImages.length > 3) return res.status(400).json({ error: 'Send maximum 3 images' });
-
+    
     //? S3 Options
     const uploadParams = {
       Bucket: process.env.BUCKET_NAME, // bucket name
