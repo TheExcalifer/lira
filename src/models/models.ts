@@ -1,9 +1,35 @@
 import mongoose, { Schema, Types } from 'mongoose';
 export enum Field {
+  // ? Product
+  slug = 'slug',
+  title = 'title',
+  category = 'category',
+  images = 'images',
+  comment = 'comment',
+  specification = 'specification',
+
+  // ? Entity
+  color = 'color',
+  stock = 'stock',
+  price = 'price',
+  productId = 'productId',
+  // ? Category
+  name = 'name',
+
+  // ? Cart
+  quantity = 'quantity',
   entityId = 'entityId',
   userId = 'userId',
-  quantity = 'quantity',
-  stock = 'stock',
+
+  // ? User
+  // name = 'name', // ? duplicate
+  email = 'email',
+  password = 'password',
+
+  // ? Admin
+  // name= 'name' // ? duplicate
+  // email = 'email',
+  // password = 'password',
 }
 // ? Product
 const productSchema = new Schema({

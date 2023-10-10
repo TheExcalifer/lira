@@ -1,6 +1,6 @@
 import { RequestHandler } from 'express';
 import Joi from 'joi';
-import { User } from '../models/models.js';
+import { User, Field, Cart } from '../models/models.js';
 import bcrypt from 'bcrypt';
 export const changePassword: RequestHandler = async (req, res) => {
   try {
@@ -11,17 +11,20 @@ export const changePassword: RequestHandler = async (req, res) => {
       newPassword: Joi.string().required().trim().min(8).max(128),
       confirmNewPassword: Joi.string().required().trim().min(8).max(128),
     });
-    const { value: validatedBody, error: validationError } = validationSchema.validate({
-      newPassword,
-      confirmNewPassword,
-    });
+    const { value: validatedBody, error: validationError } =
+      validationSchema.validate({
+        newPassword,
+        confirmNewPassword,
+      });
 
     // ? Validation Error
     if (validationError) return res.status(400).json(validationError);
-    
+
     // ? Check if the new password is the same and confirm the new password
     if (newPassword !== confirmNewPassword)
-      return res.status(400).json({ error: 'New password and confirm password does not match.' });
+      return res
+        .status(400)
+        .json({ error: 'New password and confirm password does not match.' });
 
     // ? Finding User
     const user = await User.findOne({ _id: req.user._id });
@@ -29,7 +32,8 @@ export const changePassword: RequestHandler = async (req, res) => {
 
     // ? Checking password correctness
     const matchedPassword = await bcrypt.compare(oldPassword, user.password);
-    if (!matchedPassword) return res.status(400).json({ error: 'Your password is incorrect.' });
+    if (!matchedPassword)
+      return res.status(400).json({ error: 'Your password is incorrect.' });
 
     // ? Encrypt Password
     const encryptedPassword = await bcrypt.hash(validatedBody.newPassword, 12);
@@ -42,5 +46,20 @@ export const changePassword: RequestHandler = async (req, res) => {
     res.status(200).json();
   } catch (error) {
     res.status(500).json();
+  }
+};
+export const getCart: RequestHandler = async (req, res) => {
+  try {
+    const cart = await Cart.find()
+      .where(Field.userId)
+      .equals(req.user._id)
+      .populate(Field.userId)
+      .populate({ path: Field.entityId, populate: { path: Field.productId } });
+      
+    if (cart.length === 0) return res.status(400).json();
+
+    res.status(200).json(cart);
+  } catch (error) {
+    res.status(500).send();
   }
 };
