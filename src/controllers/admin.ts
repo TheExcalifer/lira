@@ -172,6 +172,7 @@ export const createProduct: RequestHandler = async (req, res) => {
   try {
     const { slug, category, title, OS, Chipset, CPU, GPU } = req.body;
     // ? Handling Insert Product Information
+
     // ? Validation
     const validationSchema = Joi.object().keys({
       slug: Joi.string()
@@ -254,14 +255,15 @@ export const createProduct: RequestHandler = async (req, res) => {
     if (productImages.length > 3)
       return res.status(400).json({ error: 'Send maximum 3 images' });
 
-    //? S3 Options
+    // ? S3 Options
     const uploadParams = {
-      Bucket: process.env.BUCKET_NAME, // bucket name
-      Key: '', // the name of the selected file
-      ACL: 'public-read', // 'private' | 'public-read'
+      Bucket: process.env.BUCKET_NAME, // * bucket name
+      Key: '', // * the name of the selected file
+      ACL: 'public-read', // * 'private' | 'public-read'
       Body: productImages[0].buffer,
     };
 
+    const arvanS3Promises = [];
     // ? Upload multiple files
     for (const productImage of productImages) {
       const productSizeInMB = productImage.size / 1024 / 1024;
@@ -270,18 +272,20 @@ export const createProduct: RequestHandler = async (req, res) => {
         res.status(400).json({ error: 'Maximum file size is 200kb' });
         break;
       }
-
+      // * example: name.jpg => jpg
       const imageExtension = productImage.originalname.split('.').at(-1);
 
       uploadParams.Key = randomNameGenerator(imageExtension);
       productImageNames.push(process.env.BUCKET_ADDRESS + uploadParams.Key);
       uploadParams.Body = productImage.buffer;
 
-      try {
-        await arvanS3.send(new PutObjectCommand(uploadParams));
-      } catch (err) {
-        throw new Error();
-      }
+      arvanS3Promises.push(arvanS3.send(new PutObjectCommand(uploadParams)));
+    }
+
+    try {
+      await Promise.all(arvanS3Promises);
+    } catch (err) {
+      throw new Error();
     }
 
     // ? Insert Product Information
