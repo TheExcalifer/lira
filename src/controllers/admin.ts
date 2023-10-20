@@ -246,7 +246,7 @@ export const createProduct: RequestHandler = async (req, res) => {
     // * Handling Product Image Upload
 
     // * Save images name in this const and use it in create operation
-    const productImageNames: any[] = [];
+    const productImagesPaths: string[] = [];
     const productImages: any = req.files;
 
     // * Error Handling
@@ -254,14 +254,6 @@ export const createProduct: RequestHandler = async (req, res) => {
       return res.status(400).json({ error: 'Send at least 1 image' });
     if (productImages.length > 3)
       return res.status(400).json({ error: 'Send maximum 3 images' });
-
-    // * S3 Options
-    const uploadParams = {
-      Bucket: process.env.BUCKET_NAME, // * bucket name
-      Key: '', // * the name of the selected file
-      ACL: 'public-read', // * 'private' | 'public-read'
-      Body: productImages[0].buffer,
-    };
 
     const arvanS3Promises = [];
     // * Upload multiple files
@@ -274,10 +266,15 @@ export const createProduct: RequestHandler = async (req, res) => {
       }
       // * example: name.jpg => jpg
       const imageExtension = productImage.originalname.split('.').at(-1);
-
-      uploadParams.Key = randomNameGenerator(imageExtension);
-      productImageNames.push(process.env.BUCKET_ADDRESS + uploadParams.Key);
-      uploadParams.Body = productImage.buffer;
+      
+      // * S3 Options
+      const uploadParams = {
+        Bucket: process.env.BUCKET_NAME, // * bucket name
+        Key: randomNameGenerator(imageExtension), // * the name of the selected file
+        ACL: 'public-read', // * 'private' | 'public-read'
+        Body: productImage.buffer,
+      };
+      productImagesPaths.push(process.env.BUCKET_ADDRESS + uploadParams.Key);
 
       arvanS3Promises.push(arvanS3.send(new PutObjectCommand(uploadParams)));
     }
@@ -300,7 +297,7 @@ export const createProduct: RequestHandler = async (req, res) => {
           CPU: validatedBody.CPU,
           GPU: validatedBody.GPU,
         },
-        images: productImageNames,
+        images: productImagesPaths,
       });
       res.status(201).json(product);
     } catch (error: any) {
