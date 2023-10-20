@@ -4,7 +4,8 @@ import mongoose from 'mongoose';
 import { join } from 'path';
 const app = express();
 
-dotenv.config({ path: join('../', '.env') });
+const rootPath = process.cwd();
+dotenv.config({ path: join(rootPath, '.env') });
 
 app.use(express.json());
 
