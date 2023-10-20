@@ -40,7 +40,7 @@ export const changePassword: RequestHandler = async (req, res) => {
 
     // ? Update Password
     await User.updateOne({}, { $set: { password: encryptedPassword } })
-      .where('_id')
+      .where(Field._id)
       .equals(req.user._id);
 
     res.status(200).json();

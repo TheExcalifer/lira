@@ -29,7 +29,7 @@ export const login: RequestHandler = async (req, res) => {
 
     // ? Try to find user
     const userExist = await User.findOne()
-      .where('email')
+      .where(Field.email)
       .equals(validatedBody.email);
 
     // ? User Not Found Error
@@ -87,7 +87,7 @@ export const signup: RequestHandler = async (req, res) => {
 
     // ? Duplicate User Error
     const userExist = await User.findOne()
-      .where('email')
+      .where(Field.email)
       .equals(validatedBody.email);
     if (userExist)
       return res.status(400).json({
@@ -113,7 +113,6 @@ export const getProduct: RequestHandler = async (req, res) => {
     const { slug } = req.params;
 
     // ? Find Product
-    // const product = await Product.findOne().where('slug').equals(slug).populate('Entity').lean();
     const product = await Product.aggregate().match({ slug }).lookup({
       from: 'entities',
       localField: '_id',

@@ -1,6 +1,8 @@
 import mongoose, { Schema, Types } from 'mongoose';
+
 export enum Field {
   // ? Product
+  _id = '_id',
   slug = 'slug',
   title = 'title',
   category = 'category',
@@ -13,6 +15,7 @@ export enum Field {
   stock = 'stock',
   price = 'price',
   productId = 'productId',
+
   // ? Category
   name = 'name',
 
@@ -22,15 +25,12 @@ export enum Field {
   userId = 'userId',
 
   // ? User
-  // name = 'name', // ? duplicate
   email = 'email',
   password = 'password',
 
   // ? Admin
-  // name= 'name' // ? duplicate
-  // email = 'email',
-  // password = 'password',
 }
+
 // ? Product
 const productSchema = new Schema({
   slug: { type: String, required: true, unique: true },
