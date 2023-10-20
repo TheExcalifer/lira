@@ -6,7 +6,7 @@ export const changePassword: RequestHandler = async (req, res) => {
   try {
     const { oldPassword, newPassword, confirmNewPassword } = req.body;
 
-    // ? Validation
+    // * Validation
     const validationSchema = Joi.object().keys({
       newPassword: Joi.string().required().trim().min(8).max(128),
       confirmNewPassword: Joi.string().required().trim().min(8).max(128),
@@ -17,28 +17,28 @@ export const changePassword: RequestHandler = async (req, res) => {
         confirmNewPassword,
       });
 
-    // ? Validation Error
+    // * Validation Error
     if (validationError) return res.status(400).json(validationError);
 
-    // ? Check if the new password is the same and confirm the new password
+    // * Check if the new password is the same and confirm the new password
     if (newPassword !== confirmNewPassword)
       return res
         .status(400)
         .json({ error: 'New password and confirm password does not match.' });
 
-    // ? Finding User
+    // * Finding User
     const user = await User.findOne({ _id: req.user._id });
     if (!user) return res.status(404).json();
 
-    // ? Checking password correctness
+    // * Checking password correctness
     const matchedPassword = await bcrypt.compare(oldPassword, user.password);
     if (!matchedPassword)
       return res.status(400).json({ error: 'Your password is incorrect.' });
 
-    // ? Encrypt Password
+    // * Encrypt Password
     const encryptedPassword = await bcrypt.hash(validatedBody.newPassword, 12);
 
-    // ? Update Password
+    // * Update Password
     await User.updateOne({}, { $set: { password: encryptedPassword } })
       .where(Field._id)
       .equals(req.user._id);

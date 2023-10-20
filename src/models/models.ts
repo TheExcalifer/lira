@@ -1,7 +1,7 @@
 import mongoose, { Schema, Types } from 'mongoose';
 
 export enum Field {
-  // ? Product
+  // * Product
   _id = '_id',
   slug = 'slug',
   title = 'title',
@@ -10,28 +10,28 @@ export enum Field {
   comment = 'comment',
   specification = 'specification',
 
-  // ? Entity
+  // * Entity
   color = 'color',
   stock = 'stock',
   price = 'price',
   productId = 'productId',
 
-  // ? Category
+  // * Category
   name = 'name',
 
-  // ? Cart
+  // * Cart
   quantity = 'quantity',
   entityId = 'entityId',
   userId = 'userId',
 
-  // ? User
+  // * User
   email = 'email',
   password = 'password',
 
-  // ? Admin
+  // * Admin
 }
 
-// ? Product
+// * Product
 const productSchema = new Schema({
   slug: { type: String, required: true, unique: true },
   title: { type: String, required: true },
@@ -55,7 +55,7 @@ const productSchema = new Schema({
 });
 export const Product = mongoose.model('Product', productSchema);
 
-// ? Entity
+// * Entity
 const entitySchema = new Schema({
   color: { type: String, required: true },
   stock: { type: Number, required: true },
@@ -64,13 +64,13 @@ const entitySchema = new Schema({
 });
 export const Entity = mongoose.model('Entity', entitySchema);
 
-// ? Category
+// * Category
 const categorySchema = new Schema({
   name: { type: String, required: true, unique: true },
 });
 export const Category = mongoose.model('Category', categorySchema);
 
-// ? Cart
+// * Cart
 const cartSchema = new Schema({
   quantity: { type: Number, required: true },
   entityId: { type: Types.ObjectId, required: true, ref: 'Entity' },
@@ -78,7 +78,7 @@ const cartSchema = new Schema({
 });
 export const Cart = mongoose.model('Cart', cartSchema);
 
-// ? User
+// * User
 const userSchema = new Schema({
   name: { type: String, required: true },
   email: { type: String, required: true, unique: true },
@@ -86,7 +86,7 @@ const userSchema = new Schema({
 });
 export const User = mongoose.model('User', userSchema);
 
-// ? Admin
+// * Admin
 const adminSchema = new Schema({
   name: { type: String, required: true },
   email: { type: String, required: true, unique: true },

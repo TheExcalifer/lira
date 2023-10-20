@@ -14,7 +14,7 @@ import {
 
 export const login: RequestHandler = async (req, res) => {
   try {
-    // ? Validation
+    // * Validation
     const validationSchema = Joi.object().keys({
       email: Joi.string().required().email().trim().lowercase().min(8).max(128),
       password: Joi.string().required().trim().min(8).max(128),
@@ -24,33 +24,33 @@ export const login: RequestHandler = async (req, res) => {
         ...req.body,
       });
 
-    // ? Validation Error
+    // * Validation Error
     if (validationError) return res.status(400).json(validationError);
 
-    // ? Try to find user
+    // * Try to find user
     const userExist = await User.findOne()
       .where(Field.email)
       .equals(validatedBody.email);
 
-    // ? User Not Found Error
+    // * User Not Found Error
     if (!userExist)
       return res
         .status(404)
         .json({ error: 'Username or password is incorrect.' });
 
-    // ? Password Validation
+    // * Password Validation
     const matchedPassword = await bcrypt.compare(
       validatedBody.password,
       userExist.password
     );
 
-    // ? Incorrect Password Error
+    // * Incorrect Password Error
     if (!matchedPassword)
       return res
         .status(404)
         .json({ error: 'Username or password is incorrect.' });
 
-    // ? Create JWT token for Authenticated user
+    // * Create JWT token for Authenticated user
     const PAYLOAD = {
       _id: userExist._id,
       email: userExist.email,
@@ -66,7 +66,7 @@ export const login: RequestHandler = async (req, res) => {
 };
 export const signup: RequestHandler = async (req, res) => {
   try {
-    // ? Validation
+    // * Validation
     const validationSchema = Joi.object().keys({
       name: Joi.string()
         .required()
@@ -82,10 +82,10 @@ export const signup: RequestHandler = async (req, res) => {
         ...req.body,
       });
 
-    // ? Validation Error
+    // * Validation Error
     if (validationError) return res.status(400).json(validationError);
 
-    // ? Duplicate User Error
+    // * Duplicate User Error
     const userExist = await User.findOne()
       .where(Field.email)
       .equals(validatedBody.email);
@@ -94,10 +94,10 @@ export const signup: RequestHandler = async (req, res) => {
         error: 'Email already exists. Please choose a different email.',
       });
 
-    // ? Encrypt Password
+    // * Encrypt Password
     const encryptedPassword = await bcrypt.hash(validatedBody.password, 12);
 
-    // ? Create User
+    // * Create User
     const createdUser = await User.create({
       ...validatedBody,
       password: encryptedPassword, // overwrite
@@ -112,7 +112,7 @@ export const getProduct: RequestHandler = async (req, res) => {
   try {
     const { slug } = req.params;
 
-    // ? Find Product
+    // * Find Product
     const product = await Product.aggregate().match({ slug }).lookup({
       from: 'entities',
       localField: '_id',
@@ -120,7 +120,7 @@ export const getProduct: RequestHandler = async (req, res) => {
       as: 'entities',
     });
 
-    // ? Product Not Found
+    // * Product Not Found
     if (!product) return res.status(404).json();
 
     res.status(200).json(product);
@@ -132,7 +132,7 @@ export const getCategories: RequestHandler = async (req, res) => {
   try {
     const categories = await Category.find();
 
-    // ? Category Not Found
+    // * Category Not Found
     if (categories.length === 0) return res.status(404).json();
 
     res.status(200).json(categories);
@@ -142,10 +142,10 @@ export const getCategories: RequestHandler = async (req, res) => {
 };
 export const getProductsByFilter: RequestHandler = async (req, res) => {
   try {
-    // ? Return 12 item per page
+    // * Return 12 item per page
     const ITEM_PER_PAGE = 12;
 
-    // ? Validation
+    // * Validation
     const validationSchema = Joi.object().keys({
       page: Joi.number().required(),
       categoryName: Joi.string(),
@@ -158,7 +158,7 @@ export const getProductsByFilter: RequestHandler = async (req, res) => {
         ...req.body,
       });
 
-    // ? Validation Error
+    // * Validation Error
     if (validationError) return res.status(400).json(validationError);
 
     let productAggregation = Product.aggregate()
@@ -190,7 +190,7 @@ export const getProductsByFilter: RequestHandler = async (req, res) => {
 
     const products = await productAggregation.exec();
 
-    // ? Product Not Found
+    // * Product Not Found
     if (products.length === 0) return res.status(404).json();
 
     res.status(200).json(products);
@@ -200,7 +200,7 @@ export const getProductsByFilter: RequestHandler = async (req, res) => {
 };
 export const addToCart: RequestHandler = async (req, res) => {
   try {
-    // ? Validation
+    // * Validation
     const validationSchema = Joi.object().keys({
       entityId: Joi.string().required().trim(),
     });
@@ -209,7 +209,7 @@ export const addToCart: RequestHandler = async (req, res) => {
         ...req.body,
       });
 
-    // ? Validation Error
+    // * Validation Error
     if (validationError) return res.status(400).json(validationError);
 
     const entity: any = await Entity.findById(validatedBody.entityId)
@@ -223,7 +223,7 @@ export const addToCart: RequestHandler = async (req, res) => {
       .where(Field.userId)
       .equals(req.user._id);
 
-    // ? Non exist item
+    // * Non exist item
     if (!cart) {
       await Cart.create({
         userId: req.user._id,
@@ -233,11 +233,11 @@ export const addToCart: RequestHandler = async (req, res) => {
       return res.status(201).json();
     }
 
-    // ? Unavailable in stock
+    // * Unavailable in stock
     if (cart.quantity >= entity.stock)
       return res.status(404).json({ error: 'Product Unavailable.' });
 
-    // ? exist item. increase 1 number
+    // * exist item. increase 1 number
     cart.$inc(Field.quantity, 1);
     await cart.save();
 

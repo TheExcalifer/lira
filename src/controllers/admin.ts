@@ -10,7 +10,7 @@ import { randomNameGenerator } from '../util/name-generator.js';
 
 export const login: RequestHandler = async (req, res) => {
   try {
-    // ? Validation
+    // * Validation
     const validationSchema = Joi.object().keys({
       email: Joi.string().required().email().trim().lowercase().min(8).max(128),
       password: Joi.string().required().trim().min(8).max(128),
@@ -20,33 +20,33 @@ export const login: RequestHandler = async (req, res) => {
         ...req.body,
       });
 
-    // ? Validation Error
+    // * Validation Error
     if (validationError) return res.status(400).json(validationError);
 
-    // ? Try to find user
+    // * Try to find user
     const adminExist = await Admin.findOne()
       .where(Field.email)
       .equals(validatedBody.email);
 
-    // ? User Not Found Error
+    // * User Not Found Error
     if (!adminExist)
       return res
         .status(404)
         .json({ error: 'Username or password is incorrect.' });
 
-    // ? Password Validation
+    // * Password Validation
     const matchedPassword = await bcrypt.compare(
       validatedBody.password,
       adminExist.password
     );
 
-    // ? Incorrect Password Error
+    // * Incorrect Password Error
     if (!matchedPassword)
       return res
         .status(404)
         .json({ error: 'Username or password is incorrect.' });
 
-    // ? Create JWT token for Authenticated user
+    // * Create JWT token for Authenticated user
     const PAYLOAD = {
       _id: adminExist._id,
       email: adminExist.email,
@@ -64,7 +64,7 @@ export const changePassword: RequestHandler = async (req, res) => {
   try {
     const { oldPassword, newPassword, confirmNewPassword } = req.body;
 
-    // ? Validation
+    // * Validation
     const validationSchema = Joi.object().keys({
       newPassword: Joi.string().required().trim().min(8).max(128),
       confirmNewPassword: Joi.string().required().trim().min(8).max(128),
@@ -75,28 +75,28 @@ export const changePassword: RequestHandler = async (req, res) => {
         confirmNewPassword,
       });
 
-    // ? Validation Error
+    // * Validation Error
     if (validationError) return res.status(400).json(validationError);
 
-    // ? Check if the new password is the same and confirm the new password
+    // * Check if the new password is the same and confirm the new password
     if (newPassword !== confirmNewPassword)
       return res
         .status(400)
         .json({ error: 'New password and confirm password does not match.' });
 
-    // ? Finding Admin
+    // * Finding Admin
     const user = await Admin.findOne({ _id: req.admin._id });
     if (!user) return res.status(404).json();
 
-    // ? Checking password correctness
+    // * Checking password correctness
     const matchedPassword = await bcrypt.compare(oldPassword, user.password);
     if (!matchedPassword)
       return res.status(400).json({ error: 'Your password is incorrect.' });
 
-    // ? Encrypt Password
+    // * Encrypt Password
     const encryptedPassword = await bcrypt.hash(validatedBody.newPassword, 12);
 
-    // ? Update Password
+    // * Update Password
     await Admin.updateOne({}, { $set: { password: encryptedPassword } })
       .where(Field._id)
       .equals(req.admin._id);
@@ -110,7 +110,7 @@ export const createCategory: RequestHandler = async (req, res) => {
   try {
     const { categoryName } = req.body;
 
-    // ? Validation
+    // * Validation
     const validationSchema = Joi.object().keys({
       categoryName: Joi.string().required().trim().min(3).max(64).lowercase(),
     });
@@ -119,10 +119,10 @@ export const createCategory: RequestHandler = async (req, res) => {
         categoryName,
       });
 
-    // ? Validation Error
+    // * Validation Error
     if (validationError) return res.status(400).json(validationError);
 
-    // ? Create Category
+    // * Create Category
     try {
       await Category.create({ name: validatedBody.categoryName });
     } catch (error: any) {
@@ -137,7 +137,7 @@ export const createCategory: RequestHandler = async (req, res) => {
 };
 export const createEntity: RequestHandler = async (req, res) => {
   try {
-    // ? Validation
+    // * Validation
     const validationSchema = Joi.object().keys({
       productId: Joi.string().required().trim(),
       color: Joi.string().min(3).max(32).required().trim(),
@@ -149,10 +149,10 @@ export const createEntity: RequestHandler = async (req, res) => {
         ...req.body,
       });
 
-    // ? Validation Error
+    // * Validation Error
     if (validationError) return res.status(400).json(validationError);
 
-    // ? Product not found
+    // * Product not found
     const product = await Product.findById(validatedBody.productId);
     if (!product) return res.status(404).json({ error: 'Product not found.' });
 
@@ -171,9 +171,9 @@ export const createEntity: RequestHandler = async (req, res) => {
 export const createProduct: RequestHandler = async (req, res) => {
   try {
     const { slug, category, title, OS, Chipset, CPU, GPU } = req.body;
-    // ? Handling Insert Product Information
+    // * Handling Insert Product Information
 
-    // ? Validation
+    // * Validation
     const validationSchema = Joi.object().keys({
       slug: Joi.string()
         .required()
@@ -233,29 +233,29 @@ export const createProduct: RequestHandler = async (req, res) => {
         GPU,
       });
 
-    // ? Validation Error
+    // * Validation Error
     if (validationError) return res.status(400).json(validationError);
 
-    // ? Category doesn't exist error
+    // * Category doesn't exist error
     const existCategory = await Category.find()
       .where(Field.name)
       .equals(validatedBody.category);
     if (existCategory.length === 0)
       return res.status(404).json({ error: 'Category does not exist' });
 
-    // ? Handling Product Image Upload
+    // * Handling Product Image Upload
 
-    // ? Save images name in this const and use it in create operation
+    // * Save images name in this const and use it in create operation
     const productImageNames: any[] = [];
     const productImages: any = req.files;
 
-    // ? Error Handling
+    // * Error Handling
     if (productImages.length === 0)
       return res.status(400).json({ error: 'Send at least 1 image' });
     if (productImages.length > 3)
       return res.status(400).json({ error: 'Send maximum 3 images' });
 
-    // ? S3 Options
+    // * S3 Options
     const uploadParams = {
       Bucket: process.env.BUCKET_NAME, // * bucket name
       Key: '', // * the name of the selected file
@@ -264,7 +264,7 @@ export const createProduct: RequestHandler = async (req, res) => {
     };
 
     const arvanS3Promises = [];
-    // ? Upload multiple files
+    // * Upload multiple files
     for (const productImage of productImages) {
       const productSizeInMB = productImage.size / 1024 / 1024;
 
@@ -288,7 +288,7 @@ export const createProduct: RequestHandler = async (req, res) => {
       throw new Error();
     }
 
-    // ? Insert Product Information
+    // * Insert Product Information
     try {
       const product = await Product.create({
         slug: validatedBody.slug,
