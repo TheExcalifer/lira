@@ -1,11 +1,14 @@
 import express from 'express';
 import dotenv from 'dotenv';
 import mongoose from 'mongoose';
-import { join } from 'path';
+import { join, dirname } from 'path';
+import { fileURLToPath } from 'url';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+
 const app = express();
 
-const rootPath = process.cwd();
-dotenv.config({ path: join(rootPath, '.env') });
+dotenv.config({ path: join(__dirname, '..', '.env') });
 
 app.use(express.json());
 
@@ -22,7 +25,7 @@ const initilize = async () => {
   try {
     const CONNECTION_STRING = process.env.CONNECTION_STRING!;
     await mongoose.connect(CONNECTION_STRING);
-    console.log('connected');
+    console.log('Mongodb connected.');
     app.listen(process.env.SERVER_PORT);
   } catch (error) {
     console.error('Connection string is incorrect');

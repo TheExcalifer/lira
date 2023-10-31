@@ -30,3 +30,17 @@
 - [Bcrypt](https://www.npmjs.com/package/bcrypt)
 - [Client-s3](https://www.npmjs.com/package/@aws-sdk/client-s3)
 - [Multer](https://www.npmjs.com/package/multer)
+
+## Docker
+
+### Developement
+
+1. `sudo docker run --name lira-db -p 27017:27017 -v [/home/username/mongodb]:/data/db mongo:7.0-rc-jammy`
+2. Set `CONNECTION_STRING="mongodb://localhost:27017/lira"` in _.env_
+3. `npm run dev:compile`
+4. `npm run dev:serve`
+
+### Deploy
+
+1. Set `CONNECTION_STRING="mongodb://mongodb:27017/lira"` in _.env_
+2. `sudo docker compose up --build`

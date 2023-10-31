@@ -1,0 +1,9 @@
+services:
+  mongodb:
+    image: mongo:7.0-rc-jammy
+    ports:
+      - "27017:27017"
+  api:
+    build: ./
+    ports:
+      - "3000:3000"

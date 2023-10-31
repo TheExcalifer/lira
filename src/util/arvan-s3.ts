@@ -1,9 +1,10 @@
 import { S3Client } from '@aws-sdk/client-s3';
 import dotenv from 'dotenv';
-import { join } from 'path';
+import { join, dirname } from 'path';
+import { fileURLToPath } from 'url';
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
-const rootPath = process.cwd();
-dotenv.config({ path: join(rootPath, '.env') });
+dotenv.config({ path: join(__dirname, '..', '..', '.env') });
 
 export const arvanS3 = new S3Client({
   region: 'default',
