@@ -48,6 +48,9 @@
 ## Admin Credential
 
 Create a document in admin collection with these information.
+
 - **name**: lira
 - **email**: lira@lira.com
 - **password**: $2b$12$Bq10g3BJVWpkZhgYtYxsbeE7Dtkvyp2RvBJ.Z.I0DBYEIr1/IWjhq
+
+Now you can use lira@lira.com for email & password to login as an admin.
