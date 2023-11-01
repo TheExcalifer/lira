@@ -44,3 +44,10 @@
 
 1. Set `CONNECTION_STRING="mongodb://mongodb:27017/lira"` in _.env_
 2. `sudo docker compose up --build`
+
+## Admin Credential
+
+Create a document in admin collection with these information.
+- **name**: lira
+- **email**: lira@lira.com
+- **password**: $2b$12$Bq10g3BJVWpkZhgYtYxsbeE7Dtkvyp2RvBJ.Z.I0DBYEIr1/IWjhq
